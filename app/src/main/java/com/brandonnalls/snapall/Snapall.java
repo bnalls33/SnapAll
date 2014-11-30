@@ -22,7 +22,7 @@ import static de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers.*;
+import de.robv.android.xposed.XposedHelpers.*; //Here for typeahead
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 
@@ -48,13 +48,19 @@ public class Snapall implements IXposedHookLoadPackage {
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
                 //Var b is from R.java send_to_action_bar_friend_button = 2131362248.
                 ///   reverse looked that # up in method "h" where it findsViewById.
-                View otherButton = (View) getObjectField(param.thisObject, "b");
-                Context c = (Context) callMethod(param.thisObject, "getActivity");
-                CheckBox selectAll = new CheckBox(c);
-                RelativeLayout.LayoutParams myParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                myParams.addRule(RelativeLayout.LEFT_OF, otherButton.getId());
-                ((RelativeLayout) otherButton.getParent()).addView(selectAll, myParams);
-                setAdditionalInstanceField(param.thisObject, checkBoxName, selectAll);
+                CheckBox selectAll;
+                try {
+                    View otherButton = (View) getObjectField(param.thisObject, "b");
+                    Context c = (Context) callMethod(param.thisObject, "getActivity");
+                    selectAll = new CheckBox(c);
+                    RelativeLayout.LayoutParams myParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    myParams.addRule(RelativeLayout.LEFT_OF, otherButton.getId());
+                    ((RelativeLayout) otherButton.getParent()).addView(selectAll, myParams);
+                    setAdditionalInstanceField(param.thisObject, checkBoxName, selectAll);
+                } catch (Throwable t) {
+                    XposedBridge.log("Snapall failed to insert checkbox.");
+                    return;
+                }
 
 
                 selectAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
