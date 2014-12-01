@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">SnapAll</string>
+    <string name="preferences_main_category">Basic Preferences</string>
+    <string name="preferences_check_story_title">Select "My Story"</string>
+    <string name="preferences_check_story_summary">Should "Select All" also check "My Story"</string>
 </resources>

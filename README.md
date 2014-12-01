@@ -12,3 +12,6 @@ Features:
 
    If it stops working for newer versions of Snapchat please let me know, or help contribute
      by fixing the problem.
+
+   If you DO NOT want "My Story" to be selected automatically, open Xposed
+     framework, open "Modules", and tap on "SnapAll". It will open the preferences activity.

@@ -21,6 +21,7 @@ import static de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers.*; //Here for typeahead
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
@@ -36,6 +37,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
  */
 public class Snapall implements IXposedHookLoadPackage {
     public static final String checkBoxName = "selectAllCheckBoxAdditionalField";
+    private final static XSharedPreferences PREFS = new XSharedPreferences("com.brandonnalls.snapall");
 
     public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
         if (!lpparam.packageName.equals("com.snapchat.android"))
@@ -62,10 +64,12 @@ public class Snapall implements IXposedHookLoadPackage {
                     return;
                 }
 
-
                 selectAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean addFriends) {
+                        PREFS.reload();
+                        final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
+
                         //SendToAdapter
                         Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "d");
 
@@ -95,15 +99,17 @@ public class Snapall implements IXposedHookLoadPackage {
                                 for (int i = 0; i < types.length; i++) {
                                     Object thingToAdd = friendAndStoryList.get(i);
                                     if (types[i].getCanonicalName().equals("com.snapchat.android.model.Friend")) {
-                                        if (b)
+                                        if (addFriends)
                                             destinationFriendSet.add(thingToAdd);
                                         else
                                             destinationFriendSet.remove(thingToAdd);
                                     } else if (types[i].getCanonicalName().equals("com.snapchat.android.model.MyPostToStory")) {
-                                        if (b)
-                                            destinationStoryList.add(thingToAdd);
-                                        else
-                                            destinationStoryList.remove(thingToAdd);
+                                        if(checkStoryToo) {
+                                            if (addFriends)
+                                                destinationStoryList.add(thingToAdd);
+                                            else
+                                                destinationStoryList.remove(thingToAdd);
+                                        }
                                     } else {
                                         XposedBridge.log("Snappall: Found unknown type: " + types[i].toString());
                                     }

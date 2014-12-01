@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="@string/preferences_main_category" >
+        <CheckBoxPreference
+            android:title="@string/preferences_check_story_title"
+            android:summary="@string/preferences_check_story_summary"
+            android:key="select_my_story"
+            android:defaultValue="true"/>
+    </PreferenceCategory>
+</PreferenceScreen>
