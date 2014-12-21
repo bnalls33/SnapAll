@@ -70,7 +70,7 @@ public class Snapall implements IXposedHookLoadPackage {
                         PREFS.reload();
                         final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
 
-                        //SendToAdapter
+                        //SendToAdapter : var d is the only SendToAdpater in SendToFragment
                         Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "d");
 
                         if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
@@ -92,9 +92,13 @@ public class Snapall implements IXposedHookLoadPackage {
                             List destinationStoryList;
 
                             try {
+                                //From SendtoAdapter... there are two lists, just guessed....
                                 friendAndStoryList = (ArrayList) getObjectField(aa, "d");
+
+                                //From SendtoFragment.. the two collections, one is a list, one set
                                 destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
                                 destinationStoryList = (List) getObjectField(param.thisObject, "m");
+
                                 Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
                                 for (int i = 0; i < types.length; i++) {
                                     Object thingToAdd = friendAndStoryList.get(i);
@@ -114,9 +118,14 @@ public class Snapall implements IXposedHookLoadPackage {
                                         XposedBridge.log("Snappall: Found unknown type: " + types[i].toString());
                                     }
                                 }
-                                callMethod(param.thisObject, "e");
+
+                                // Method in SendToFragment that will have the UI match the data
+                                // source by putting ", " between friends' names in the bottom blue
+                                // bar. It has iterators (localInterator1) and such.
+                                callMethod(param.thisObject, "d");
                             } catch (Throwable t) {
                                 XposedBridge.log("Snapall failed to check all. Check snapchat version compatibility.");
+                                XposedBridge.log(t.toString());
                             }
 
                         }
@@ -125,6 +134,9 @@ public class Snapall implements IXposedHookLoadPackage {
             }
         });
 
+        /**
+         * These hide the checkbox while the search box is displayed
+         */
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "m", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
