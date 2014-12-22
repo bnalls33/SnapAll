@@ -1,9 +1,9 @@
-Snapall is an Xposed Module for Snapchat 8.0.0
+Snapall is an Xposed Module for Snapchat 8.1.0
 
 Requirements:
    Android v15+
    Xposed Framework 30+
-   Snapchat 8.0.0
+   Snapchat 8.1.0
 
 Features:
    If enabled, it allows you to send a snapchat to everyone in your friends list, easily.
