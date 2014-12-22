@@ -48,7 +48,7 @@ public class Snapall implements IXposedHookLoadPackage {
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "h", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                //Var b is from R.java send_to_action_bar_friend_button = 2131362248.
+                //Var b is from R.java send_to_action_bar_search_button = 2131427800
                 ///   reverse looked that # up in method "h" where it findsViewById.
                 CheckBox selectAll;
                 try {
