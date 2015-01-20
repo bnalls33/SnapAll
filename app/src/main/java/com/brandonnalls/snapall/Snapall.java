@@ -1,19 +1,26 @@
 package com.brandonnalls.snapall;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static de.robv.android.xposed.XposedHelpers.callMethod;
+import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
+import static de.robv.android.xposed.XposedHelpers.findClass;
+import static de.robv.android.xposed.XposedHelpers.findConstructorExact;
 import static de.robv.android.xposed.XposedHelpers.getAdditionalInstanceField;
 import static de.robv.android.xposed.XposedHelpers.getObjectField;
 import static de.robv.android.xposed.XposedHelpers.getParameterTypes;
@@ -28,7 +35,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 
 /*
-    Created for proguarded Snapchat 8.0.0
+    Created for proguarded Snapchat 8.1.0
     Adds a "SelectAll" checkbox to the top of the Friend Selection Fragment.
     Lets you send snaps to all your friends ASAP.
 
@@ -36,8 +43,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
     type safety (this isn't compiled with snapchat code). This is a hack.
  */
 public class Snapall implements IXposedHookLoadPackage {
-    public static final String checkBoxName = "selectAllCheckBoxAdditionalField";
-    private final static XSharedPreferences PREFS = new XSharedPreferences("com.brandonnalls.snapall");
+    public static final String groupButtonContainerName = "sharedButtonContainer"; //This contains SnapAll + SnapGroups
+    private static final XSharedPreferences PREFS = new XSharedPreferences("com.brandonnalls.snapall");
 
     public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
         if (!lpparam.packageName.equals("com.snapchat.android"))
@@ -48,17 +55,35 @@ public class Snapall implements IXposedHookLoadPackage {
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "h", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                //Var b is from R.java send_to_action_bar_search_button = 2131427800
-                ///   reverse looked that # up in method "h" where it findsViewById.
                 CheckBox selectAll;
                 try {
-                    View otherButton = (View) getObjectField(param.thisObject, "b");
                     Context c = (Context) callMethod(param.thisObject, "getActivity");
+
+                    //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131427800
+                    ///   reverse looked that # up in method "h" where it findsViewById(213142700) via alias method.
+                    View otherButton = (View) getObjectField(param.thisObject, "b");
+
+                    //Creates a container for SnapAll and SnapGroup XPosed mod buttons (if it doesn't exist already)
+                    // and puts this snapGroup button into the container, next to "otherbutton" (preexisting snapchat button)
+                    LinearLayout sharedButtonContainer = (LinearLayout) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
+                    if(sharedButtonContainer == null || !(sharedButtonContainer instanceof LinearLayout)) {
+                        RelativeLayout.LayoutParams myParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        myParams.setMargins(0, 0, 30, 0);
+                        myParams.addRule(RelativeLayout.LEFT_OF, otherButton.getId());
+                        myParams.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
+                        sharedButtonContainer = new LinearLayout(c);
+                        sharedButtonContainer.setOrientation(LinearLayout.HORIZONTAL);
+                        sharedButtonContainer.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);
+                        ((RelativeLayout)otherButton.getParent()).addView(sharedButtonContainer, myParams);
+                        setAdditionalInstanceField(param.thisObject, groupButtonContainerName, sharedButtonContainer);
+                    }
+
                     selectAll = new CheckBox(c);
-                    RelativeLayout.LayoutParams myParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                    myParams.addRule(RelativeLayout.LEFT_OF, otherButton.getId());
-                    ((RelativeLayout) otherButton.getParent()).addView(selectAll, myParams);
-                    setAdditionalInstanceField(param.thisObject, checkBoxName, selectAll);
+                    selectAll.setScaleX(1.5F);
+                    selectAll.setScaleY(1.5F);
+                    LinearLayout.LayoutParams myParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    myParams.setMargins(30,0,30,0);
+                    sharedButtonContainer.addView(selectAll);
                 } catch (Throwable t) {
                     XposedBridge.log("Snapall failed to insert checkbox.");
                     return;
@@ -140,7 +165,7 @@ public class Snapall implements IXposedHookLoadPackage {
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "m", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                View v = (View) getAdditionalInstanceField(param.thisObject, checkBoxName);
+                View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
                 v.setVisibility(View.VISIBLE);
             }
         });
@@ -148,7 +173,7 @@ public class Snapall implements IXposedHookLoadPackage {
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "n", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                View v = (View) getAdditionalInstanceField(param.thisObject, checkBoxName);
+                View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
                 v.setVisibility(View.INVISIBLE);
             }
         });
