@@ -1,6 +1,9 @@
 package com.brandonnalls.snapall;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,7 +58,6 @@ public class Snapall implements IXposedHookLoadPackage {
         findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "h", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-                CheckBox selectAll;
                 try {
                     Context c = (Context) callMethod(param.thisObject, "getActivity");
 
@@ -77,85 +79,74 @@ public class Snapall implements IXposedHookLoadPackage {
                         ((RelativeLayout)otherButton.getParent()).addView(sharedButtonContainer, myParams);
                         setAdditionalInstanceField(param.thisObject, groupButtonContainerName, sharedButtonContainer);
                     }
-
-                    selectAll = new CheckBox(c);
-                    selectAll.setScaleX(1.5F);
-                    selectAll.setScaleY(1.5F);
+                    CheckBox selectAll = getCheckbox(c);
                     LinearLayout.LayoutParams myParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                     myParams.setMargins(0,0,30,0);
                     sharedButtonContainer.addView(selectAll, myParams);
+                    selectAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton compoundButton, boolean addFriends) {
+                            PREFS.reload();
+                            final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
+
+                            //SendToAdapter : var d is the only SendToAdpater in SendToFragment
+                            Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "d");
+
+                            if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
+                                ArrayAdapter aa = (ArrayAdapter) hopefullyArrayAdapter;
+                                //TODO: notify if >200 recipients. UI used to block it, might be enforced server side.
+
+                                //Not sure which arraylist to use, d or e.... seem like nearly duplicates
+                                ArrayList friendAndStoryList;
+                                Set destinationFriendSet;
+                                List destinationStoryList;
+
+                                try {
+                                    //From SendtoAdapter... there are two lists, just guessed....
+                                    friendAndStoryList = (ArrayList) getObjectField(aa, "d");
+
+                                    //From SendtoFragment.. the two collections, one is a list, one set
+                                    destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
+                                    destinationStoryList = (List) getObjectField(param.thisObject, "m");
+
+                                    Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
+                                    for (int i = 0; i < types.length; i++) {
+                                        Object thingToAdd = friendAndStoryList.get(i);
+                                        if (types[i].getCanonicalName().equals("com.snapchat.android.model.Friend")) {
+                                            if (addFriends)
+                                                destinationFriendSet.add(thingToAdd);
+                                            else
+                                                destinationFriendSet.remove(thingToAdd);
+                                        } else if (types[i].getCanonicalName().equals("com.snapchat.android.model.MyPostToStory")) {
+                                            if(checkStoryToo) {
+                                                if (addFriends)
+                                                    destinationStoryList.add(thingToAdd);
+                                                else
+                                                    destinationStoryList.remove(thingToAdd);
+                                            }
+                                        } else {
+                                            XposedBridge.log("Snappall: Found unknown type: " + types[i].toString());
+                                        }
+                                    }
+
+                                    // Method in SendToFragment that will have the UI match the data
+                                    // source by putting ", " between friends' names in the bottom blue
+                                    // bar. It has iterators (localInterator1) and such.
+                                    callMethod(param.thisObject, "b");
+                                } catch (Throwable t) {
+                                    XposedBridge.log("Snapall failed to check all. Check snapchat version compatibility.");
+                                    XposedBridge.log(t.toString());
+                                }
+
+                            }
+                        }
+                    });
                 } catch (Throwable t) {
                     XposedBridge.log("Snapall failed to insert checkbox.");
                     return;
                 }
 
-                selectAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean addFriends) {
-                        PREFS.reload();
-                        final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
 
-                        //SendToAdapter : var d is the only SendToAdpater in SendToFragment
-                        Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "d");
-
-                        if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
-                            ArrayAdapter aa = (ArrayAdapter) hopefullyArrayAdapter;
-                            //TODO: notify if >200 recipients. UI used to block it, might be enforced server side.
-
-                            /* Easier, slower method here. Uses the callback function which is slow
-                            //Not sure which arraylist to use, d or e.... seem like nearly duplicates
-                            List sendToItemList = (List) getObjectField(aa, "d");
-                            Object sendToCheckedCallback = getObjectField(aa, "i");
-                            for (Object sendToItem : sendToItemList) {
-                                if (sendToCheckedCallback != null)
-                                    callMethod(sendToCheckedCallback, "a", sendToItem, b);
-                            }*/ // This works
-
-                            //Not sure which arraylist to use, d or e.... seem like nearly duplicates
-                            ArrayList friendAndStoryList;
-                            Set destinationFriendSet;
-                            List destinationStoryList;
-
-                            try {
-                                //From SendtoAdapter... there are two lists, just guessed....
-                                friendAndStoryList = (ArrayList) getObjectField(aa, "d");
-
-                                //From SendtoFragment.. the two collections, one is a list, one set
-                                destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
-                                destinationStoryList = (List) getObjectField(param.thisObject, "m");
-
-                                Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
-                                for (int i = 0; i < types.length; i++) {
-                                    Object thingToAdd = friendAndStoryList.get(i);
-                                    if (types[i].getCanonicalName().equals("com.snapchat.android.model.Friend")) {
-                                        if (addFriends)
-                                            destinationFriendSet.add(thingToAdd);
-                                        else
-                                            destinationFriendSet.remove(thingToAdd);
-                                    } else if (types[i].getCanonicalName().equals("com.snapchat.android.model.MyPostToStory")) {
-                                        if(checkStoryToo) {
-                                            if (addFriends)
-                                                destinationStoryList.add(thingToAdd);
-                                            else
-                                                destinationStoryList.remove(thingToAdd);
-                                        }
-                                    } else {
-                                        XposedBridge.log("Snappall: Found unknown type: " + types[i].toString());
-                                    }
-                                }
-
-                                // Method in SendToFragment that will have the UI match the data
-                                // source by putting ", " between friends' names in the bottom blue
-                                // bar. It has iterators (localInterator1) and such.
-                                callMethod(param.thisObject, "b");
-                            } catch (Throwable t) {
-                                XposedBridge.log("Snapall failed to check all. Check snapchat version compatibility.");
-                                XposedBridge.log(t.toString());
-                            }
-
-                        }
-                    }
-                });
             }
         });
 
@@ -177,6 +168,25 @@ public class Snapall implements IXposedHookLoadPackage {
                 v.setVisibility(View.INVISIBLE);
             }
         });
+    }
+
+    /**
+     * Opens SnapChat's Resources and gets the pretty checkbox, for reuse & consistent appearance
+     * @param c SNAPCHAT's context
+     * @return A pretty checkbox (hopefully)
+     */
+    public static CheckBox getCheckbox(Context c) {
+        CheckBox cb = new CheckBox(c);
+        try {
+            //Setting properties from snapchat's res/layout/send_to_item.xml checkbox
+            cb.setButtonDrawable(c.getResources().getIdentifier("send_to_button_selector", "drawable", "com.snapchat.android"));
+            //May need to scale drawable bitmap...
+            cb.setScaleX(0.7F);
+            cb.setScaleY(0.7F);
+        } catch (Exception e) {
+            XposedBridge.log("SnapAll: Error creating fancy checkbox");
+        }
+        return cb;
     }
 
 }
