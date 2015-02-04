@@ -13,6 +13,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class Snapall implements IXposedHookLoadPackage {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
                 try {
-                    Context c = (Context) callMethod(param.thisObject, "getActivity");
+                    final Context c = (Context) callMethod(param.thisObject, "getActivity");
 
                     //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131362379
                     ///   reverse looked that # up in method SendToFragment "h" where it findsViewById(2131362379) via alias method.
@@ -94,7 +95,6 @@ public class Snapall implements IXposedHookLoadPackage {
 
                             if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
                                 ArrayAdapter aa = (ArrayAdapter) hopefullyArrayAdapter;
-                                //TODO: notify if >200 recipients. UI used to block it, might be enforced server side.
 
                                 //Not sure which arraylist to use, d or e.... seem like nearly duplicates
                                 ArrayList friendAndStoryList;
@@ -109,13 +109,20 @@ public class Snapall implements IXposedHookLoadPackage {
                                     destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
                                     destinationStoryList = (List) getObjectField(param.thisObject, "m");
 
+                                    int numUsersAdded = 0;
                                     Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
                                     for (int i = 0; i < types.length; i++) {
                                         Object thingToAdd = friendAndStoryList.get(i);
                                         if (types[i].getCanonicalName().equals("com.snapchat.android.model.Friend")) {
-                                            if (addFriends)
+                                            if (addFriends) {
                                                 destinationFriendSet.add(thingToAdd);
-                                            else
+                                                numUsersAdded++;
+                                                if(numUsersAdded >= 199) {
+                                                    // Server enforces 200 recipient limit. Not sure if 200 includes the story.
+                                                    Toast.makeText(c, "You have too many friends. Install SnapGroups instead.", Toast.LENGTH_LONG).show();
+                                                    break;
+                                                }
+                                            } else
                                                 destinationFriendSet.remove(thingToAdd);
                                         } else if (types[i].getCanonicalName().equals("com.snapchat.android.model.MyPostToStory")) {
                                             if(checkStoryToo) {
