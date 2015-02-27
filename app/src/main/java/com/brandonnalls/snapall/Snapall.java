@@ -54,9 +54,9 @@ public class Snapall implements IXposedHookLoadPackage {
         if (!lpparam.packageName.equals("com.snapchat.android"))
             return;
 
-        //method h basically does findViewByIds (via SnapChatFragment's findviewbyid wrapper
+        //method k basically does findViewByIds (via SnapChat's SendToFragment's findviewbyid wrapper
         // passing in button ids from R.java) then sets onclicklisteners
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "h", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "k", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
                 try {
@@ -160,7 +160,7 @@ public class Snapall implements IXposedHookLoadPackage {
         /**
          * These hide the checkbox while the search box is displayed
          */
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "o", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "q", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
@@ -168,7 +168,7 @@ public class Snapall implements IXposedHookLoadPackage {
             }
         });
 
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "p", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "r", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
