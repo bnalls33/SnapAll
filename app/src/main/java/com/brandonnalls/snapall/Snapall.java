@@ -39,7 +39,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 
 /*
-    Created for proguarded Snapchat 8.1.0
+    Created for proguarded Snapchat
     Adds a "SelectAll" checkbox to the top of the Friend Selection Fragment.
     Lets you send snaps to all your friends ASAP.
 
@@ -54,17 +54,17 @@ public class Snapall implements IXposedHookLoadPackage {
         if (!lpparam.packageName.equals("com.snapchat.android"))
             return;
 
-        //method k basically does findViewByIds (via SnapChat's SendToFragment's findviewbyid wrapper
+        //method l basically does findViewByIds (via SnapChat's SendToFragment's findviewbyid wrapper
         // passing in button ids from R.java) then sets onclicklisteners
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "k", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "l", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
                 try {
                     final Context c = (Context) callMethod(param.thisObject, "getActivity");
 
-                    //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131362379
-                    ///   reverse looked that # up in method SendToFragment "h" where it findsViewById(2131362379) via alias method.
-                    View otherButton = (View) getObjectField(param.thisObject, "b");
+                    //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131362420
+                    ///   reverse looked that # up in method SendToFragment "l" where it findsViewById(2131362420) via alias m
+                    View otherButton = (View) getObjectField(param.thisObject, "c");
 
                     //Creates a container for SnapAll and SnapGroup XPosed mod buttons (if it doesn't exist already)
                     // and puts this snapGroup button into the container, next to "otherbutton" (preexisting snapchat button)
@@ -90,8 +90,8 @@ public class Snapall implements IXposedHookLoadPackage {
                             PREFS.reload();
                             final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
 
-                            //SendToAdapter : var d is the only SendToAdpater in SendToFragment
-                            Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "d");
+                            //SendToAdapter : var e is the only SendToAdpater in SendToFragment
+                            Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "e");
 
                             if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
                                 ArrayAdapter aa = (ArrayAdapter) hopefullyArrayAdapter;
@@ -102,12 +102,12 @@ public class Snapall implements IXposedHookLoadPackage {
                                 List destinationStoryList;
 
                                 try {
-                                    //From SendtoAdapter... there are two lists, just guessed....
-                                    friendAndStoryList = (ArrayList) getObjectField(aa, "d");
+                                    //From SendtoAdapter... there are two lists (c,h), just guessed....
+                                    friendAndStoryList = (ArrayList) getObjectField(aa, "c");
 
                                     //From SendtoFragment.. the two collections, one is a list, one set
-                                    destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
-                                    destinationStoryList = (List) getObjectField(param.thisObject, "m");
+                                    destinationFriendSet = (Set) getObjectField(param.thisObject, "m");
+                                    destinationStoryList = (List) getObjectField(param.thisObject, "n");
 
                                     int numUsersAdded = 0;
                                     Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
@@ -160,7 +160,7 @@ public class Snapall implements IXposedHookLoadPackage {
         /**
          * These hide the checkbox while the search box is displayed
          */
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "q", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "s", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
@@ -168,7 +168,7 @@ public class Snapall implements IXposedHookLoadPackage {
             }
         });
 
-        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "r", new XC_MethodHook() {
+        findAndHookMethod("com.snapchat.android.fragments.sendto.SendToFragment", lpparam.classLoader, "t", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 View v = (View) getAdditionalInstanceField(param.thisObject, groupButtonContainerName);
