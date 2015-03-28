@@ -62,8 +62,8 @@ public class Snapall implements IXposedHookLoadPackage {
                 try {
                     final Context c = (Context) callMethod(param.thisObject, "getActivity");
 
-                    //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131362420
-                    ///   reverse looked that # up in method SendToFragment "l" where it findsViewById(2131362420) via alias m
+                    //Otherbutton (Var b) is from R.java send_to_action_bar_search_button = 2131362434
+                    ///   reverse looked that # up in method SendToFragment "l" where it findsViewById(2131362434) via alias method.
                     View otherButton = (View) getObjectField(param.thisObject, "c");
 
                     //Creates a container for SnapAll and SnapGroup XPosed mod buttons (if it doesn't exist already)
@@ -91,10 +91,13 @@ public class Snapall implements IXposedHookLoadPackage {
                             final boolean checkStoryToo = PREFS.getBoolean("select_my_story", true);
 
                             //SendToAdapter : var e is the only SendToAdpater in SendToFragment
-                            Object hopefullyArrayAdapter =  getObjectField(param.thisObject, "e");
+                            final Object hopefullySendToAdapter =  getObjectField(param.thisObject, "e");
+                            final String adaptersType = getParameterTypes(new Object[]{hopefullySendToAdapter})[0].getCanonicalName();
+                            final boolean isSendToAdapter = adaptersType.equals("com.snapchat.android.fragments.sendto.SendToAdapter");
 
-                            if (hopefullyArrayAdapter != null && hopefullyArrayAdapter instanceof ArrayAdapter) {
-                                ArrayAdapter aa = (ArrayAdapter) hopefullyArrayAdapter;
+
+                            if (hopefullySendToAdapter != null && isSendToAdapter) {
+                                Object sendToAdapter = hopefullySendToAdapter;
 
                                 //Not sure which arraylist to use, d or e.... seem like nearly duplicates
                                 ArrayList friendAndStoryList;
@@ -102,12 +105,12 @@ public class Snapall implements IXposedHookLoadPackage {
                                 List destinationStoryList;
 
                                 try {
-                                    //From SendtoAdapter... there are two lists (c,h), just guessed....
-                                    friendAndStoryList = (ArrayList) getObjectField(aa, "c");
+                                    //From SendtoAdapter... there are two lists (i,j), just guessed....
+                                    friendAndStoryList = (ArrayList) getObjectField(sendToAdapter, "i");
 
                                     //From SendtoFragment.. the two collections, one is a list, one set
-                                    destinationFriendSet = (Set) getObjectField(param.thisObject, "m");
-                                    destinationStoryList = (List) getObjectField(param.thisObject, "n");
+                                    destinationFriendSet = (Set) getObjectField(param.thisObject, "l");
+                                    destinationStoryList = (List) getObjectField(param.thisObject, "m");
 
                                     int numUsersAdded = 0;
                                     Class<?>[] types = getParameterTypes(friendAndStoryList.toArray());
