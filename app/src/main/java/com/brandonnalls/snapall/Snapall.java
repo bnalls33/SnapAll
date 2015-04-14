@@ -142,7 +142,7 @@ public class Snapall implements IXposedHookLoadPackage {
                                     // Method in SendToFragment that will have the UI match the data
                                     // source by putting ", " between friends' names in the bottom blue
                                     // bar. It has iterators (localInterator1) and such.
-                                    callMethod(param.thisObject, "b");
+                                    callMethod(param.thisObject, "c");
                                 } catch (Throwable t) {
                                     XposedBridge.log("Snapall failed to check all. Check snapchat version compatibility.");
                                     XposedBridge.log(t.toString());

@@ -7,7 +7,7 @@ This code is VERY MESSY. It was refactored in SnapGroups.
 ##Requirements:
 - Android v15+
 - Xposed Framework 30+
-- Snapchat 9.4.2.0
+- Snapchat 9.5.2.0
 
 ##Features:
    If enabled, it allows you to send a snapchat to everyone in your friends list, easily.
